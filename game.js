@@ -1,25 +1,27 @@
 // ====== ЗАГРУЗКА ======
 let lp=0;
 (function tick(){
-  lp+=3;
-  if(lp>100)lp=100;
+  lp+=3;if(lp>100)lp=100;
   document.getElementById('loadbar').style.width=lp+'%';
   if(lp<100)setTimeout(tick,50);
   else{
     document.getElementById('loadsub').textContent='Готово!';
     setTimeout(()=>{
       document.getElementById('loading').style.display='none';
-      document.getElementById('lobby').style.display='flex';
+      document.getElementById('lobby').style.display='block';
     },400);
   }
 })();
 
-// ====== ПЕРЕМЕННЫЕ ======
+// ====== ДАННЫЕ ======
 const SVR='wss://hero-stars.onrender.com';
-let ws,pid,trophies=0,nick='Hero',inMatch=false,alive=true,hp=100;
+let ws,pid,trophies=0,maxTrophies=0,nick='Огонёк',tag='HERO123';
+let fame=0,hours=0,logins=1,elo=0,rank='БРОНЗА 1';
+let inMatch=false,alive=true,hp=100;
 let enemy=null,mx=0,my=0,me={x:480,y:270},bullets=[],particles=[];
 let keys={},phone=/Android|iPhone|iPad/i.test(navigator.userAgent);
 const C=document.getElementById('c'),ctx=C.getContext('2d'),W=960,H=540;
+let selectedMode='showdown';
 
 let heroes=[
   {id:1,name:'Огонёк',emoji:'🔥',owned:true,rarity:'Обычный'},
@@ -30,35 +32,165 @@ let heroes=[
   {id:6,name:'Целитель',emoji:'💚',owned:false,rarity:'Редкий'}
 ],cur=heroes[0];
 
-// ====== ПАНЕЛИ ======
-function openModes(){document.getElementById('modes-panel').style.display='block';}
-function closeModes(){document.getElementById('modes-panel').style.display='none';}
-function openShop(){
-  document.getElementById('ptitle').textContent='🛒 Магазин';
-  document.getElementById('pbody').innerHTML='<p style="color:#aaa">Скины и ящики — скоро!</p>';
-  document.getElementById('panel').style.display='block';
+let modes=[
+  {id:'showdown',name:'Столкновение',icon:'💀',desc:'Выживи и уничтожь всех'},
+  {id:'brawlball',name:'Броуболл',icon:'⚽',desc:'Забей 2 гола'},
+  {id:'gemgrab',name:'Захват кристаллов',icon:'💎',desc:'Собери 10 кристаллов'},
+  {id:'knockout',name:'Нокаут',icon:'🥊',desc:'Победи в 2 раундах'}
+];
+
+// Загрузка
+if(localStorage.getItem('hs_data')){
+  let d=JSON.parse(localStorage.getItem('hs_data'));
+  trophies=d.trophies||0;maxTrophies=d.maxTrophies||0;nick=d.nick||'Огонёк';
+  tag=d.tag||'HERO123';fame=d.fame||0;hours=d.hours||0;logins=d.logins||1;
+  elo=d.elo||0;rank=d.rank||'БРОНЗА 1';selectedMode=d.mode||'showdown';
+  cur=heroes.find(h=>h.emoji===d.avatar)||heroes[0];
 }
-function openHeroes(){
-  document.getElementById('ptitle').textContent='👥 Герои';
-  let h='<div class="hero-grid">';
-  heroes.forEach(x=>h+=`<div class="hc ${x.owned?'owned':'locked'}" onclick="pick(${x.id})"><div class="he">${x.emoji}</div><div class="hn">${x.name}</div></div>`);
-  h+='</div>';document.getElementById('pbody').innerHTML=h;
+logins++;
+saveData();
+
+function saveData(){
+  localStorage.setItem('hs_data',JSON.stringify({
+    trophies,maxTrophies,nick,tag,fame,hours,logins,elo,rank,avatar:cur.emoji,mode:selectedMode
+  }));
+}
+
+function updateUI(){
+  document.getElementById('hbox').textContent=cur.emoji;
+  document.getElementById('hname').textContent=nick;
+  document.getElementById('avatar-btn').textContent=cur.emoji;
+  document.getElementById('fpfill').style.width=fame+'%';
+  document.getElementById('fptext').textContent=fame+'/100';
+}
+updateUI();
+
+// ====== РЕЖИМЫ ======
+function openModes(){
+  let ml=document.getElementById('mode-list');
+  ml.innerHTML='';
+  modes.forEach(m=>{
+    let sel=m.id===selectedMode?' selected':'';
+    ml.innerHTML+=`<div class="mode-card${sel}" onclick="selectMode('${m.id}')">
+      <span class="mc-icon">${m.icon}</span>
+      <div class="mc-info"><div class="mc-name">${m.name}</div><div class="mc-desc">${m.desc}</div></div>
+      <span class="mc-check">✅</span>
+    </div>`;
+  });
+  updateSelectedText();
+  document.getElementById('modes-panel').style.display='block';
+}
+function selectMode(id){
+  selectedMode=id;saveData();
+  openModes();
+}
+function updateSelectedText(){
+  let m=modes.find(x=>x.id===selectedMode);
+  document.getElementById('selected-mode').textContent='Выбрано: '+m.icon+' '+m.name;
+}
+function closeModes(){document.getElementById('modes-panel').style.display='none';}
+
+// ====== ПРОФИЛЬ ======
+function openProfile(){
+  document.getElementById('prof-avatar').textContent=cur.emoji;
+  document.getElementById('prof-tag').textContent='#'+tag;
+  document.getElementById('prof-nick').textContent=nick;
+  document.getElementById('stat-max').textContent=maxTrophies;
+  document.getElementById('stat-hours').textContent=Math.floor(hours);
+  document.getElementById('stat-logins').textContent=logins;
+  document.getElementById('rank-badge').textContent='🥉 '+rank;
+  document.getElementById('rank-elo').textContent=elo+' ELO';
+  document.getElementById('avatar-picker').style.display='none';
+  document.getElementById('nick-changer').style.display='none';
+  document.getElementById('profile-panel').style.display='block';
+}
+function closeProfile(){document.getElementById('profile-panel').style.display='none';}
+
+function showAvatarPicker(){
+  let ap=document.getElementById('avatar-picker');
+  let html='<div class="avatar-pick">';
+  heroes.forEach(h=>{
+    if(!h.owned)return;
+    let sel=h.emoji===cur.emoji?' selected':'';
+    html+=`<div class="ap${sel}" onclick="pickAvatar('${h.emoji}')">${h.emoji}</div>`;
+  });
+  html+='</div>';
+  ap.innerHTML=html;
+  ap.style.display='block';
+  document.getElementById('nick-changer').style.display='none';
+}
+function pickAvatar(emoji){
+  let h=heroes.find(x=>x.emoji===emoji);
+  if(h){cur=h;updateUI();saveData();openProfile();}
+}
+
+function showNickChange(){
+  document.getElementById('avatar-picker').style.display='none';
+  let nc=document.getElementById('nick-changer');
+  nc.innerHTML=`<input id="nick-input" placeholder="Новый никнейм" maxlength="16" value="${nick}"><br><button class="change-btn" onclick="saveNick()">💾 Сохранить</button>`;
+  nc.style.display='block';
+}
+function saveNick(){
+  let val=document.getElementById('nick-input').value.trim();
+  if(val.length>0&&val.length<=16){
+    nick=val;updateUI();saveData();openProfile();
+    if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'set_nickname',nickname:nick}));
+  }
+}
+
+// ====== ПАНЕЛИ ======
+function openBurger(){document.getElementById('burger-panel').style.display='block';}
+function closeBurger(){document.getElementById('burger-panel').style.display='none';}
+function openInvite(){document.getElementById('invite-panel').style.display='block';}
+function closeInvite(){document.getElementById('invite-panel').style.display='none';}
+
+function openPanel(t){
+  if(t==='shop'){
+    document.getElementById('ptitle').textContent='🛒 Магазин';
+    document.getElementById('pbody').innerHTML='<p style="color:#aaa">Скины, ящики, золото — скоро!</p>';
+  }
+  if(t==='heroes'){
+    document.getElementById('ptitle').textContent='👥 Герои';
+    let h='<div class="hero-grid">';
+    heroes.forEach(x=>h+=`<div class="hc ${x.owned?'owned':'locked'}" onclick="pickHero(${x.id})"><div class="he">${x.emoji}</div><div class="hn">${x.name}</div></div>`);
+    h+='</div>';document.getElementById('pbody').innerHTML=h;
+  }
+  if(t==='news'){
+    document.getElementById('ptitle').textContent='📰 Новости';
+    document.getElementById('pbody').innerHTML='<p style="color:#aaa">🔥 Новый сезон!</p><p style="color:#aaa">🏆 Герой недели: Огонёк</p>';
+  }
   document.getElementById('panel').style.display='block';
 }
 function closePanel(){document.getElementById('panel').style.display='none';}
-function pick(id){
+
+function pickHero(id){
   let h=heroes.find(x=>x.id===id);if(!h.owned)return;
-  cur=h;document.getElementById('hbox').textContent=h.emoji;document.getElementById('hname').textContent=h.name;closePanel();
+  cur=h;updateUI();saveData();closePanel();
 }
+
 function showLB(){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'get_leaderboard'}));}
-function invite(){
+function openSettings(){
+  document.getElementById('ptitle').textContent='⚙️ Настройки';
+  document.getElementById('pbody').innerHTML='<p style="color:#aaa">Громкость</p><p style="color:#aaa">Язык: Русский</p>';
+  document.getElementById('panel').style.display='block';closeBurger();
+}
+function openNotifications(){
+  document.getElementById('ptitle').textContent='🔔 Уведомления';
+  document.getElementById('pbody').innerHTML='<p style="color:#aaa">Нет новых уведомлений</p>';
+  document.getElementById('panel').style.display='block';closeBurger();
+}
+function inviteFriend(){
   let code='HS'+Math.random().toString(36).slice(2,8).toUpperCase();
-  prompt('📨 Отправь этот код другу:',code);
+  prompt('📤 Отправь код другу:',code);closeInvite();
+}
+function joinByCode(){
+  let code=prompt('📥 Введи код:');
+  if(code)alert('Подключение: '+code);closeInvite();
 }
 
 // ====== ЗАПУСК ======
 function go(mode){
-  closeModes();
+  selectedMode=mode;saveData();closeModes();
   if(ws&&ws.readyState===WebSocket.OPEN){
     ws.send(JSON.stringify({type:'join_queue',mode}));
     document.getElementById('lobby').style.display='none';
@@ -89,7 +221,6 @@ function upd(t){
 document.addEventListener('keydown',e=>{if(!inMatch)return;keys[e.key]=true;upk();if(e.key===' '||e.key==='Enter'){e.preventDefault();fire();}});
 document.addEventListener('keyup',e=>{keys[e.key]=false;upk();});
 C.addEventListener('click',()=>{if(inMatch&&!phone)fire();});
-
 function upk(){
   mx=0;my=0;
   if(keys['w']||keys['ArrowUp'])my=-1;
@@ -138,12 +269,20 @@ function startMatch(d){
 }
 function endMatch(d){
   inMatch=false;enemy=null;alive=true;hp=100;
-  if(d.trophies!==undefined){trophies=d.trophies;document.getElementById('gt').textContent=trophies;}
-  document.getElementById('lobby').style.display='flex';document.getElementById('game').style.display='none';bullets=[];particles=[];
+  if(d.trophies!==undefined){
+    trophies=d.trophies;
+    if(trophies>maxTrophies)maxTrophies=trophies;
+    document.getElementById('gt').textContent=trophies;
+  }
+  fame=Math.min(100,fame+10);hours+=0.05;
+  elo=Math.max(0,elo+(d.result==='win'?15:-8));
+  if(elo>=100)rank='БРОНЗА 2';else if(elo>=50)rank='БРОНЗА 1';
+  updateUI();saveData();
+  document.getElementById('lobby').style.display='block';document.getElementById('game').style.display='none';bullets=[];particles=[];
 }
 function leave(){
   if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'leave_queue'}));
-  inMatch=false;enemy=null;document.getElementById('lobby').style.display='flex';document.getElementById('game').style.display='none';
+  inMatch=false;enemy=null;document.getElementById('lobby').style.display='block';document.getElementById('game').style.display='none';
 }
 function lbp(data){
   document.getElementById('ptitle').textContent='🏆 Лидеры';let h='<ol style="text-align:left">';

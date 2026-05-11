@@ -15,13 +15,15 @@ let lp=0;
 
 // ====== ДАННЫЕ ======
 const SVR='wss://hero-stars.onrender.com';
-let ws,pid,trophies=0,maxTrophies=0,nick='Огонёк',tag='HERO123';
+let ws,pid,trophies=0,maxTrophies=0,nick='Огонёк',tag='';
 let fame=0,hours=0,logins=1,elo=0,rank='БРОНЗА 1';
 let inMatch=false,alive=true,hp=100;
 let enemy=null,mx=0,my=0,me={x:480,y:270},bullets=[],particles=[];
 let keys={},phone=/Android|iPhone|iPad/i.test(navigator.userAgent);
 const C=document.getElementById('c'),ctx=C.getContext('2d'),W=960,H=540;
 let selectedMode='showdown';
+let myRoomCode='';
+let guestInLobby=null;
 
 let heroes=[
   {id:1,name:'Огонёк',emoji:'🔥',owned:true,rarity:'Обычный'},
@@ -39,15 +41,26 @@ let modes=[
   {id:'knockout',name:'Нокаут',icon:'🥊',desc:'Победи в 2 раундах'}
 ];
 
+// Генерация уникального тега
+function genTag(){
+  let chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let t='';
+  for(let i=0;i<8;i++)t+=chars[Math.floor(Math.random()*chars.length)];
+  return t;
+}
+
 // Загрузка
 if(localStorage.getItem('hs_data')){
   let d=JSON.parse(localStorage.getItem('hs_data'));
   trophies=d.trophies||0;maxTrophies=d.maxTrophies||0;nick=d.nick||'Огонёк';
-  tag=d.tag||'HERO123';fame=d.fame||0;hours=d.hours||0;logins=d.logins||1;
+  tag=d.tag||genTag();fame=d.fame||0;hours=d.hours||0;logins=d.logins||1;
   elo=d.elo||0;rank=d.rank||'БРОНЗА 1';selectedMode=d.mode||'showdown';
   cur=heroes.find(h=>h.emoji===d.avatar)||heroes[0];
+}else{
+  tag=genTag();
 }
 logins++;
+if(!myRoomCode)myRoomCode='HS'+tag;
 saveData();
 
 function saveData(){
@@ -60,10 +73,30 @@ function updateUI(){
   document.getElementById('hbox').textContent=cur.emoji;
   document.getElementById('hname').textContent=nick;
   document.getElementById('avatar-btn').textContent=cur.emoji;
-  document.getElementById('fpfill').style.width=fame+'%';
-  document.getElementById('fptext').textContent=fame+'/100';
+  let fameMax=10000;
+  let pct=Math.min(100,Math.round((trophies/fameMax)*100));
+  document.getElementById('fpfill').style.width=pct+'%';
+  document.getElementById('fptext').textContent=trophies+'/'+fameMax;
 }
 updateUI();
+
+// ====== НАГРАДЫ ЗА КУБКИ ======
+let lastReward=0;
+function checkRewards(){
+  let rewardAt=Math.floor(trophies/100)*100;
+  if(rewardAt>lastReward){
+    lastReward=rewardAt;
+    let rewards=['🎁 50 монет','🃏 Случайная карта','💎 5 гемов','🎫 Боевой пропуск XP','🎲 Ящик'];
+    let r=rewards[Math.floor(Math.random()*rewards.length)];
+    showReward('🎉 '+trophies+' кубков! '+r);
+  }
+}
+function showReward(msg){
+  let div=document.createElement('div');
+  div.className='reward-popup';div.textContent=msg;
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),2000);
+}
 
 // ====== РЕЖИМЫ ======
 function openModes(){
@@ -80,10 +113,7 @@ function openModes(){
   updateSelectedText();
   document.getElementById('modes-panel').style.display='block';
 }
-function selectMode(id){
-  selectedMode=id;saveData();
-  openModes();
-}
+function selectMode(id){selectedMode=id;saveData();openModes();}
 function updateSelectedText(){
   let m=modes.find(x=>x.id===selectedMode);
   document.getElementById('selected-mode').textContent='Выбрано: '+m.icon+' '+m.name;
@@ -115,8 +145,7 @@ function showAvatarPicker(){
     html+=`<div class="ap${sel}" onclick="pickAvatar('${h.emoji}')">${h.emoji}</div>`;
   });
   html+='</div>';
-  ap.innerHTML=html;
-  ap.style.display='block';
+  ap.innerHTML=html;ap.style.display='block';
   document.getElementById('nick-changer').style.display='none';
 }
 function pickAvatar(emoji){
@@ -162,12 +191,10 @@ function openPanel(t){
   document.getElementById('panel').style.display='block';
 }
 function closePanel(){document.getElementById('panel').style.display='none';}
-
 function pickHero(id){
   let h=heroes.find(x=>x.id===id);if(!h.owned)return;
   cur=h;updateUI();saveData();closePanel();
 }
-
 function showLB(){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'get_leaderboard'}));}
 function openSettings(){
   document.getElementById('ptitle').textContent='⚙️ Настройки';
@@ -179,20 +206,34 @@ function openNotifications(){
   document.getElementById('pbody').innerHTML='<p style="color:#aaa">Нет новых уведомлений</p>';
   document.getElementById('panel').style.display='block';closeBurger();
 }
+
+// ====== ПРИГЛАШЕНИЕ ======
 function inviteFriend(){
-  let code='HS'+Math.random().toString(36).slice(2,8).toUpperCase();
-  prompt('📤 Отправь код другу:',code);closeInvite();
+  if(!myRoomCode)myRoomCode='HS'+tag;
+  prompt('📤 Отправь этот код другу:',myRoomCode);
+  closeInvite();
+  // Отправляем на сервер что мы создали комнату
+  if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'create_room',code:myRoomCode,nickname:nick,avatar:cur.emoji}));
 }
 function joinByCode(){
-  let code=prompt('📥 Введи код:');
-  if(code)alert('Подключение: '+code);closeInvite();
+  let code=prompt('📥 Введи код комнаты:');
+  if(code){
+    if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'join_room',code:code,nickname:nick,avatar:cur.emoji}));
+    closeInvite();
+  }
+}
+function showGuestInLobby(data){
+  guestInLobby=data;
+  let badge=document.getElementById('guest-badge');
+  badge.innerHTML=`<span class="guest-avatar">${data.avatar}</span><span class="guest-name">${data.nickname}</span> в лобби!`;
+  badge.style.display='flex';
 }
 
 // ====== ЗАПУСК ======
 function go(mode){
   selectedMode=mode;saveData();closeModes();
   if(ws&&ws.readyState===WebSocket.OPEN){
-    ws.send(JSON.stringify({type:'join_queue',mode}));
+    ws.send(JSON.stringify({type:'join_queue',mode,room:myRoomCode}));
     document.getElementById('lobby').style.display='none';
     document.getElementById('game').style.display='flex';
     document.getElementById('gs').textContent='Поиск...';
@@ -241,7 +282,10 @@ function send(){if(ws&&ws.readyState===WebSocket.OPEN&&inMatch)ws.send(JSON.stri
 // ====== WEBSOCKET ======
 function connect(){
   ws=new WebSocket(SVR);
-  ws.onopen=()=>ws.send(JSON.stringify({type:'set_nickname',nickname:nick}));
+  ws.onopen=()=>{
+    ws.send(JSON.stringify({type:'set_nickname',nickname:nick}));
+    if(myRoomCode)ws.send(JSON.stringify({type:'create_room',code:myRoomCode,nickname:nick,avatar:cur.emoji}));
+  };
   ws.onmessage=e=>{
     let d=JSON.parse(e.data);
     switch(d.type){
@@ -256,6 +300,7 @@ function connect(){
       case 'timer':document.getElementById('gm').textContent='⏱'+d.remaining+'с';break;
       case 'match_result':endMatch(d);break;
       case 'leaderboard':lbp(d.data);break;
+      case 'guest_joined':showGuestInLobby(d);break;
     }
   };
   ws.onclose=()=>{if(inMatch)leave();setTimeout(connect,3000);};
@@ -274,6 +319,7 @@ function endMatch(d){
     if(trophies>maxTrophies)maxTrophies=trophies;
     document.getElementById('gt').textContent=trophies;
   }
+  checkRewards();
   fame=Math.min(100,fame+10);hours+=0.05;
   elo=Math.max(0,elo+(d.result==='win'?15:-8));
   if(elo>=100)rank='БРОНЗА 2';else if(elo>=50)rank='БРОНЗА 1';

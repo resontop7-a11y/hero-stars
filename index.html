@@ -6,126 +6,101 @@
 <title>Hero Stars</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{
-background:#0a1628;font-family:Arial,sans-serif;
-width:100vw;height:100vh;overflow:hidden;
-display:flex;justify-content:center;align-items:center;
-user-select:none;-webkit-user-select:none;
-}
+body{background:#0a1628;font-family:'Segoe UI',Arial,sans-serif;width:100vw;height:100vh;overflow:hidden;display:flex;justify-content:center;align-items:center;user-select:none;-webkit-user-select:none}
 
-/* ЗАГРУЗКА */
-#loading{
-position:fixed;top:0;left:0;width:100%;height:100%;
-background:#0a1628;z-index:999;
-display:flex;flex-direction:column;
-align-items:center;justify-content:center;gap:20px;color:#fff;
-}
+#loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a1628;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;color:#fff}
 #loading .icon{font-size:70px}
 #loading .title{font-size:36px;font-weight:900;letter-spacing:6px;color:#00d4ff}
 #loading .bar-bg{width:260px;height:10px;background:rgba(255,255,255,.2);border-radius:10px}
 #loading .bar{width:0%;height:100%;background:#ffd700;border-radius:10px}
 #loading .sub{color:#aaa;font-size:14px}
 
-/* ЛОББИ - ВСЕГДА ГОРИЗОНТАЛЬНО */
-#lobby{
-display:none;width:100vw;height:100vh;
-background:linear-gradient(to bottom,#0d1f3c,#061220);
-flex-direction:row;align-items:center;justify-content:center;
-gap:30px;padding:20px;
-}
+#lobby{display:none;width:100vw;height:100vh;background:linear-gradient(135deg,#0d1f3c,#061220);position:relative}
 
-/* ЛЕВЫЙ + */
-.left-plus{
-width:70px;height:70px;border-radius:50%;
-background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);
-color:#fff;font-size:36px;cursor:pointer;
-display:flex;align-items:center;justify-content:center;
-flex-shrink:0;
-}
+.avatar-btn{position:absolute;top:15px;left:15px;z-index:10;width:55px;height:55px;border-radius:50%;background:rgba(0,212,255,.15);border:2px solid #00d4ff;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;color:#fff}
+.fame-path{position:absolute;top:25px;left:80px;z-index:10;display:flex;align-items:center;gap:8px}
+.fame-path .fp-bar{width:110px;height:8px;background:rgba(255,255,255,.15);border-radius:10px;overflow:hidden}
+.fame-path .fp-fill{height:100%;background:linear-gradient(90deg,#ffd700,#f90);border-radius:10px;width:0%;transition:.5s}
+.fame-path .fp-text{color:#ffd700;font-size:11px;font-weight:bold;white-space:nowrap}
 
-/* ЦЕНТР */
-.center-col{
-display:flex;flex-direction:column;align-items:center;gap:18px;
-}
-.hero-box{
-width:130px;height:130px;border-radius:50%;
-border:3px solid rgba(255,255,255,.2);
-display:flex;align-items:center;justify-content:center;
-font-size:55px;background:rgba(0,212,255,.1);
-}
-.hero-name{color:#fff;font-size:20px;font-weight:bold}
+.burger{position:absolute;top:15px;right:15px;z-index:10;width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-/* КНОПКА РЕЖИМЫ */
-.modes-btn{
-padding:12px 30px;background:rgba(255,255,255,.1);
-border:1px solid rgba(255,255,255,.2);color:#fff;
-border-radius:20px;font-size:16px;cursor:pointer;font-weight:bold;
-}
+.left-panel{position:absolute;left:15px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:10}
+.lbtn{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.lbtn:hover{background:rgba(0,212,255,.2);border-color:#00d4ff}
 
-/* ПРАВЫЙ + */
-.right-plus{
-width:70px;height:70px;border-radius:50%;
-background:rgba(0,200,100,.2);border:2px solid #0c8;
-color:#0c8;font-size:36px;cursor:pointer;
-display:flex;align-items:center;justify-content:center;
-flex-shrink:0;
-}
+.center-col{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:30px}
+.invite-side{width:44px;height:44px;border-radius:50%;background:rgba(0,200,100,.15);border:2px solid #0c8;color:#0c8;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.invite-side:hover{background:rgba(0,200,100,.3);transform:scale(1.1)}
+.hero-area{display:flex;flex-direction:column;align-items:center;gap:10px}
+.hero-box{width:130px;height:130px;border-radius:50%;border:3px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:55px;background:rgba(0,212,255,.1);cursor:pointer;transition:.2s}
+.hero-box:hover{border-color:#00d4ff;box-shadow:0 0 25px rgba(0,212,255,.3)}
+.hero-nick{color:#fff;font-size:20px;font-weight:bold}
+.play-btn{padding:14px 50px;background:#ffd700;color:#000;border:none;border-radius:28px;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #b8960b;transition:.1s}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #b8960b}
+.play-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b8960b}
 
-/* ПАНЕЛЬ РЕЖИМОВ */
-#modes-panel{
-position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-background:rgba(5,15,30,.98);color:#fff;padding:25px;
-border-radius:20px;z-index:50;display:none;
-text-align:center;min-width:280px;
-border:1px solid rgba(255,255,255,.2);
-}
+#modes-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(5,15,30,.98);color:#fff;padding:25px;border-radius:20px;z-index:50;display:none;text-align:center;min-width:300px;border:1px solid rgba(255,255,255,.2)}
 #modes-panel h3{color:#ffd700;margin-bottom:15px;font-size:20px}
-#modes-panel button{
-display:block;width:100%;margin:8px 0;padding:12px;
-background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-color:#fff;border-radius:12px;font-size:15px;cursor:pointer;text-align:left;
-}
-#modes-panel .close-btn{
-background:red;text-align:center;margin-top:10px;font-weight:bold;
-}
+.mode-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px 18px;margin:8px 0;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);color:#fff;border-radius:16px;font-size:16px;cursor:pointer;text-align:left;transition:.2s}
+.mode-card:hover{background:rgba(0,212,255,.15);border-color:#00d4ff}
+.mode-card.selected{border-color:#ffd700;background:rgba(255,215,0,.1)}
+.mode-card .mc-icon{font-size:32px}
+.mode-card .mc-info{flex:1}
+.mode-card .mc-name{font-weight:bold}
+.mode-card .mc-desc{font-size:11px;color:#aaa}
+.mode-card .mc-check{color:#ffd700;font-size:20px;display:none}
+.mode-card.selected .mc-check{display:block}
+#selected-mode{color:#ffd700;font-size:13px;margin-top:8px}
+.close-btn{background:red!important;text-align:center!important;font-weight:bold;display:block;width:100%;margin-top:12px;padding:12px;border:none;color:#fff;border-radius:12px;font-size:15px;cursor:pointer}
 
-/* ПАНЕЛЬ (магазин, герои) */
-#panel{
-position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-background:rgba(5,15,30,.98);color:#fff;padding:25px;
-border-radius:20px;z-index:50;display:none;
-text-align:center;min-width:280px;max-height:70vh;overflow-y:auto;
-border:1px solid rgba(255,255,255,.2);
-}
+#profile-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(5,15,30,.98);color:#fff;padding:25px;border-radius:20px;z-index:50;display:none;text-align:center;min-width:320px;max-height:80vh;overflow-y:auto;border:1px solid rgba(255,255,255,.2)}
+#profile-panel .prof-avatar{width:80px;height:80px;border-radius:50%;margin:0 auto 8px;background:rgba(0,212,255,.15);border:2px solid #00d4ff;display:flex;align-items:center;justify-content:center;font-size:42px}
+#profile-panel .prof-tag{color:#aaa;font-size:13px;margin-bottom:5px}
+#profile-panel .prof-nick{color:#fff;font-size:18px;font-weight:bold;margin-bottom:12px}
+.change-btn{padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:15px;font-size:12px;cursor:pointer;margin:3px}
+.avatar-pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.avatar-pick .ap{width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.avatar-pick .ap.selected{border-color:#ffd700;background:rgba(255,215,0,.15)}
+.stat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;margin:8px 0;text-align:left}
+.stat-card .stat-row{display:flex;justify-content:space-between;padding:6px 0;color:#ccc;font-size:14px}
+.stat-card .stat-val{color:#ffd700;font-weight:bold}
+.rank-badge{display:inline-block;padding:6px 16px;background:linear-gradient(135deg,#cd7f32,#8b5a2b);border-radius:15px;color:#fff;font-weight:bold;font-size:14px;margin:8px 0}
+.rank-elo{color:#aaa;font-size:12px}
+
+#burger-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(5,15,30,.98);color:#fff;padding:25px;border-radius:20px;z-index:50;display:none;text-align:center;min-width:280px;border:1px solid rgba(255,255,255,.2)}
+#burger-panel h3{color:#ffd700;margin-bottom:15px}
+.burger-item{display:flex;align-items:center;gap:12px;width:100%;padding:14px;margin:6px 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:14px;font-size:15px;cursor:pointer;transition:.15s;text-align:left}
+.burger-item:hover{background:rgba(0,212,255,.15);border-color:#00d4ff}
+.burger-item .bi-icon{font-size:22px}
+
+#invite-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(5,15,30,.98);color:#fff;padding:25px;border-radius:20px;z-index:50;display:none;text-align:center;min-width:280px;border:1px solid rgba(255,255,255,.2)}
+#invite-panel h3{color:#ffd700;margin-bottom:15px}
+#invite-panel button{display:block;width:100%;margin:8px 0;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:15px;cursor:pointer;text-align:left}
+
+#panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(5,15,30,.98);color:#fff;padding:25px;border-radius:20px;z-index:50;display:none;text-align:center;min-width:280px;max-height:70vh;overflow-y:auto;border:1px solid rgba(255,255,255,.2)}
 #panel h3{color:#ffd700;margin-bottom:15px}
-#panel button{
-margin-top:10px;padding:8px 25px;background:#00d4ff;
-border:none;border-radius:15px;color:#000;font-weight:bold;cursor:pointer;
-}
+#panel button{margin-top:10px;padding:8px 25px;background:#00d4ff;border:none;border-radius:15px;color:#000;font-weight:bold;cursor:pointer}
 .hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.hc{padding:10px;background:rgba(255,255,255,.06);border-radius:12px;cursor:pointer;text-align:center}
+.hc{padding:10px;background:rgba(255,255,255,.06);border-radius:12px;cursor:pointer;text-align:center;transition:.15s}
+.hc:hover{background:rgba(0,212,255,.2)}
 .hc.owned{border:2px solid #ffd700}
 .hc.locked{opacity:.4}
 .hc .he{font-size:30px}
 .hc .hn{color:#fff;font-size:11px;margin-top:3px}
 
-/* ИГРА */
-#game{
-position:fixed;top:0;left:0;width:100%;height:100%;
-display:none;justify-content:center;align-items:center;
-background:#000;z-index:40;
-}
+#game{position:fixed;top:0;left:0;width:100%;height:100%;display:none;justify-content:center;align-items:center;background:#000;z-index:40}
 canvas{border:2px solid #00d4ff;max-width:100vw;max-height:100vh}
 #gui{position:absolute;top:8px;left:8px;color:#fff;font-size:13px;z-index:41;pointer-events:none;display:flex;gap:8px}
 #back{position:absolute;top:8px;right:8px;background:red;color:#fff;border:none;padding:6px 12px;border-radius:50%;font-size:14px;z-index:42;cursor:pointer}
 #js{position:absolute;bottom:25px;left:25px;width:100px;height:100px;background:rgba(255,255,255,.06);border-radius:50%;border:2px solid rgba(255,255,255,.2);z-index:42;display:none}
 #jk{position:absolute;width:40px;height:40px;background:rgba(255,255,255,.35);border-radius:50%;top:30px;left:30px}
 #atk{position:absolute;bottom:45px;right:25px;width:65px;height:65px;background:rgba(255,50,50,.5);border-radius:50%;border:3px solid #f44;color:#fff;font-size:20px;display:none;align-items:center;justify-content:center;z-index:42}
+#nick-input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:15px;text-align:center;margin:8px 0}
 </style>
 </head>
 <body>
 
-<!-- ЗАГРУЗКА -->
 <div id="loading">
   <div class="icon">⚔️</div>
   <div class="title">HERO STARS</div>
@@ -133,37 +108,77 @@ canvas{border:2px solid #00d4ff;max-width:100vw;max-height:100vh}
   <div class="sub" id="loadsub">Загрузка...</div>
 </div>
 
-<!-- ЛОББИ -->
 <div id="lobby">
-  <div class="left-plus" onclick="openShop()">+</div>
+  <div class="avatar-btn" id="avatar-btn" onclick="openProfile()">🔥</div>
+  <div class="fame-path">
+    <div class="fp-bar"><div class="fp-fill" id="fpfill"></div></div>
+    <span class="fp-text" id="fptext">0/100</span>
+  </div>
+  <div class="burger" onclick="openBurger()">☰</div>
 
-  <div class="center-col">
-    <div class="hero-box" id="hbox">🔥</div>
-    <div class="hero-name" id="hname">Огонёк</div>
-    <button class="modes-btn" onclick="openModes()">⚔️ РЕЖИМЫ</button>
+  <div class="left-panel">
+    <button class="lbtn" onclick="openPanel('shop')">🛒</button>
+    <button class="lbtn" onclick="openPanel('heroes')">👥</button>
+    <button class="lbtn" onclick="openPanel('news')">📰</button>
   </div>
 
-  <div class="right-plus" onclick="invite()">+</div>
+  <div class="center-col">
+    <div class="invite-side" onclick="openInvite()" title="Пригласить">+</div>
+    <div class="hero-area">
+      <div class="hero-box" id="hbox" onclick="openPanel('heroes')">🔥</div>
+      <div class="hero-nick" id="hname">Огонёк</div>
+      <button class="play-btn" onclick="openModes()">▶ ИГРАТЬ</button>
+    </div>
+    <div class="invite-side" onclick="openInvite()" title="Пригласить">+</div>
+  </div>
 </div>
 
-<!-- ПАНЕЛЬ РЕЖИМОВ -->
 <div id="modes-panel">
   <h3>ВЫБОР РЕЖИМА</h3>
-  <button onclick="go('showdown')">💀 Столкновение</button>
-  <button onclick="go('brawlball')">⚽ Броуболл</button>
-  <button onclick="go('gemgrab')">💎 Захват кристаллов</button>
-  <button onclick="go('knockout')">🥊 Нокаут</button>
+  <div id="mode-list"></div>
+  <div id="selected-mode"></div>
   <button class="close-btn" onclick="closeModes()">ЗАКРЫТЬ</button>
 </div>
 
-<!-- ПАНЕЛЬ -->
+<div id="profile-panel">
+  <div class="prof-avatar" id="prof-avatar">🔥</div>
+  <div class="prof-tag" id="prof-tag">#HERO123</div>
+  <div class="prof-nick" id="prof-nick">Огонёк</div>
+  <button class="change-btn" onclick="showAvatarPicker()">🖼 Сменить аватар</button>
+  <button class="change-btn" onclick="showNickChange()">✏ Сменить ник</button>
+  <div id="avatar-picker" style="display:none"></div>
+  <div id="nick-changer" style="display:none"></div>
+  <div class="stat-card">
+    <div class="stat-row"><span>🏆 Макс. кубков</span><span class="stat-val" id="stat-max">0</span></div>
+    <div class="stat-row"><span>⏱ Часов в игре</span><span class="stat-val" id="stat-hours">0</span></div>
+    <div class="stat-row"><span>🔢 Заходов всего</span><span class="stat-val" id="stat-logins">1</span></div>
+  </div>
+  <div class="rank-badge" id="rank-badge">🥉 БРОНЗА 1</div>
+  <div class="rank-elo" id="rank-elo">0 ELO</div>
+  <button class="close-btn" style="margin-top:12px" onclick="closeProfile()">ЗАКРЫТЬ</button>
+</div>
+
+<div id="burger-panel">
+  <h3>☰ МЕНЮ</h3>
+  <button class="burger-item" onclick="showLB();closeBurger()"><span class="bi-icon">🏆</span> Списки лидеров</button>
+  <button class="burger-item" onclick="openSettings()"><span class="bi-icon">⚙️</span> Настройки</button>
+  <button class="burger-item" onclick="openNotifications()"><span class="bi-icon">🔔</span> Уведомления</button>
+  <button class="close-btn" onclick="closeBurger()">ЗАКРЫТЬ</button>
+</div>
+
+<div id="invite-panel">
+  <h3>📨 ПРИГЛАСИТЬ / ВСТУПИТЬ</h3>
+  <button onclick="inviteFriend()">📤 Пригласить друга</button>
+  <button onclick="joinByCode()">📥 Вступить по коду</button>
+  <button class="close-btn" onclick="closeInvite()">ЗАКРЫТЬ</button>
+</div>
+
 <div id="panel">
   <h3 id="ptitle"></h3>
   <div id="pbody"></div>
   <button onclick="closePanel()">Закрыть</button>
 </div>
 
-<!-- ИГРА -->
 <div id="game">
   <canvas id="c" width="960" height="540"></canvas>
   <div id="gui"><span>🏆<span id="gt">0</span></span><span>❤️<span id="gh">100</span></span><span id="gs">Бой</span><span id="gm"></span></div>

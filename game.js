@@ -84,7 +84,6 @@ function updateUI(){
   let ft=document.getElementById('fptext');if(ft)ft.textContent=trophies+'/10K';
   let cd=document.getElementById('coins-display');if(cd)cd.textContent=coins;
   let gd=document.getElementById('gems-display');if(gd)gd.textContent=gems;
-  // Ранг над героем
   let rpct=Math.min(100,Math.round((elo/1250)*100));
   let rf=document.getElementById('hero-rank-fill');if(rf)rf.style.width=rpct+'%';
   let rt=document.getElementById('hero-rank-text');if(rt)rt.textContent=rank;
@@ -122,12 +121,7 @@ function closeFame(){let p=document.getElementById('fame-panel');if(p)p.style.di
 function openLeaderboardP(){closeBurger();openLeaderboard();}
 function openLeaderboard(){
   let tabs=document.getElementById('lb-tabs');
-  tabs.innerHTML=`
-    <button class="active" onclick="showLBtab('global')">🌍 Мир</button>
-    <button onclick="showLBtab('local')">📍 Местный</button>
-    <button onclick="showLBtab('club')">👥 Клуб</button>
-    <button onclick="showLBtab('hero')">⚔️ Боец</button>
-  `;
+  tabs.innerHTML=`<button class="active" onclick="showLBtab('global')">🌍 Мир</button><button onclick="showLBtab('local')">📍 Местный</button><button onclick="showLBtab('club')">👥 Клуб</button><button onclick="showLBtab('hero')">⚔️ Боец</button>`;
   showLBtab('global');
   document.getElementById('leaderboard-panel').style.display='block';
 }
@@ -141,18 +135,11 @@ function showLBtab(tab){
   if(tab==='global')data=[{nickname:nick,avatar:cur.emoji,trophies}];
   else if(tab==='local')data=[{nickname:nick,avatar:cur.emoji,trophies}];
   else if(tab==='club')data=clubMembers.length>0?clubMembers.map(m=>({nickname:m,avatar:'👤',trophies:0})):[{nickname:nick,avatar:cur.emoji,trophies}];
-  else if(tab==='hero'){
-    // Список бойцов с их кубками
-    heroes.filter(h=>h.owned).forEach(h=>{
-      data.push({nickname:h.name,avatar:h.emoji,trophies:allHeroTrophies[h.emoji]||0});
-    });
-  }
-  data.slice(0,50).forEach((x,i)=>{
-    list.innerHTML+=`<div class="lb-row" onclick="openProfileByTag('${x.nickname}')"><span class="lb-rank">${i+1}</span><span class="lb-avatar">${x.avatar||'🔥'}</span><span class="lb-name">${x.nickname||'Игрок'}</span><span class="lb-score">${x.trophies||0} 🏆</span></div>`;
-  });
+  else if(tab==='hero'){heroes.filter(h=>h.owned).forEach(h=>{data.push({nickname:h.name,avatar:h.emoji,trophies:allHeroTrophies[h.emoji]||0});});}
+  if(data.length===0){list.innerHTML='<p style="color:#aaa;text-align:center">Нет данных</p>';return;}
+  data.slice(0,50).forEach((x,i)=>{list.innerHTML+=`<div class="lb-row" onclick="openProfileByTag('${x.nickname}')"><span class="lb-rank">${i+1}</span><span class="lb-avatar">${x.avatar||'🔥'}</span><span class="lb-name">${x.nickname||'Игрок'}</span><span class="lb-score">${x.trophies||0} 🏆</span></div>`;});
 }
-
-function openProfileByTag(name){closeLeaderboard();/* Пока просто показываем профиль */openProfile();}
+function openProfileByTag(name){closeLeaderboard();openProfile();}
 
 // ====== КЛУБ ======
 function openClub(){
@@ -176,16 +163,11 @@ function createClub(){if(coins<1000){alert('Не хватает монет!');re
 function openFriends(){
   let h='<h3 style="color:#ffd700">👫 ДРУЗЬЯ</h3>';
   h+='<div class="friends-layout">';
-  // Левая часть - добавить друга
   h+='<div class="friends-left"><b style="color:#aaa;font-size:12px">Добавить</b>';
   h+=`<input id="add-friend-input" placeholder="#Тэг" style="width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:12px;margin:4px 0">`;
   h+=`<button onclick="addFriend()" style="padding:4px 10px;background:#0c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:11px">Добавить</button>`;
-  if(friendRequests.length>0){
-    h+='<div style="margin-top:8px"><b style="color:#ffd700;font-size:11px">Заявки</b></div>';
-    friendRequests.forEach(f=>h+=`<div class="friend-card"><span>👤</span><span>${f}</span><button onclick="acceptFriend('${f}')" style="margin-left:auto;background:#0c8;color:#fff;border:none;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer">✓</button></div>`);
-  }
+  if(friendRequests.length>0){h+='<div style="margin-top:8px"><b style="color:#ffd700;font-size:11px">Заявки</b></div>';friendRequests.forEach(f=>h+=`<div class="friend-card"><span>👤</span><span>${f}</span><button onclick="acceptFriend('${f}')" style="margin-left:auto;background:#0c8;color:#fff;border:none;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer">✓</button></div>`);}
   h+='</div>';
-  // Правая часть - список друзей
   h+='<div class="friends-right"><b style="color:#aaa;font-size:12px">Друзья</b>';
   if(friends.length===0)h+='<p style="color:#aaa;font-size:11px">Нет друзей</p>';
   else friends.forEach(f=>h+=`<div class="friend-card"><span>👤</span><span>${f}</span><button onclick="blockFriend('${f}')" style="margin-left:auto;background:red;color:#fff;border:none;border-radius:6px;padding:2px 6px;font-size:10px;cursor:pointer">🚫</button></div>`);
@@ -194,17 +176,35 @@ function openFriends(){
   document.getElementById('ptitle').textContent='';document.getElementById('pbody').innerHTML=h;
   document.getElementById('panel').style.display='block';
 }
+
 function addFriend(){
   let inp=document.getElementById('add-friend-input');if(!inp)return;
-  let val=inp.value.trim();if(val&&!friends.includes(val)&&!friendRequests.includes(val)){friendRequests.push(val);saveData();closePanel();openFriends();}
+  let val=inp.value.trim().replace('#','');
+  if(!val){alert('Введите тэг!');return;}
+  if(val===tag){alert('Нельзя добавить себя!');return;}
+  if(friends.includes(val)){alert('Уже в друзьях!');return;}
+  if(friendRequests.includes(val)){alert('Заявка уже отправлена!');return;}
+  safeSend({type:'friend_request',toTag:val,from:nick,fromTag:tag,fromAvatar:cur.emoji});
+  alert('📤 Заявка отправлена игроку #'+val);
+  closePanel();
 }
-function acceptFriend(name){friendRequests=friendRequests.filter(f=>f!==name);if(!friends.includes(name))friends.push(name);saveData();closePanel();openFriends();}
-function blockFriend(name){friends=friends.filter(f=>f!==name);if(!blocked.includes(name))blocked.push(name);saveData();closePanel();openFriends();}
+function acceptFriend(f){
+  friendRequests=friendRequests.filter(x=>x!==f);
+  if(!friends.includes(f))friends.push(f);
+  safeSend({type:'friend_accepted',toTag:f,from:nick});
+  saveData();closePanel();openFriends();
+}
+function blockFriend(f){
+  friends=friends.filter(x=>x!==f);
+  if(!blocked.includes(f))blocked.push(f);
+  saveData();closePanel();openFriends();
+}
 
 // ====== НАСТРОЙКИ ======
 function openSettings(){document.getElementById('settings-panel').style.display='block';closeBurger();}
 function closeSettings(){document.getElementById('settings-panel').style.display='none';}
 function openNotifications(){document.getElementById('ptitle').textContent='🔔 Уведомления';document.getElementById('pbody').innerHTML='<p style="color:#aaa">Нет новых</p>';document.getElementById('panel').style.display='block';closeBurger();}
+
 // ====== ПРОФИЛЬ ======
 function openProfile(){
   let pa=document.getElementById('prof-avatar');if(pa)pa.textContent=cur.emoji;
@@ -226,9 +226,7 @@ function showAvatarPicker(){
   h+='</div>';ap.innerHTML=h;ap.style.display='block';
   let nc=document.getElementById('nick-changer');if(nc)nc.style.display='none';
 }
-function pickAvatar(e){
-  let h=heroes.find(x=>x.emoji===e);if(h){cur=h;updateUI();saveData();openProfile();}
-}
+function pickAvatar(e){let h=heroes.find(x=>x.emoji===e);if(h){cur=h;updateUI();saveData();openProfile();}}
 function showNickChange(){
   let nc=document.getElementById('nick-changer');let ap=document.getElementById('avatar-picker');if(ap)ap.style.display='none';
   nc.innerHTML=`<input id="nick-input" placeholder="Новый ник" maxlength="16" value="${nick}" style="width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:13px;text-align:center;margin:4px 0"><br><button class="change-btn" onclick="saveNick()">💾 Сохранить</button>`;
@@ -246,18 +244,24 @@ function openHeroes(){document.getElementById('ptitle').textContent='👥 Гер
 function openNews(){document.getElementById('ptitle').textContent='📰 Новости';document.getElementById('pbody').innerHTML='<p style="color:#aaa">Новый сезон!</p>';document.getElementById('panel').style.display='block';}
 function closePanel(){document.getElementById('panel').style.display='none';}
 function pickHero(id){let h=heroes.find(x=>x.id===id);if(h&&h.owned){cur=h;updateUI();saveData();closePanel();}}
-
 // ====== ПРИГЛАШЕНИЕ ======
 function inviteFriend(){
   if(!myRoomCode)myRoomCode='HS'+tag;
   safeSend({type:'create_room',code:myRoomCode,nickname:nick,avatar:cur.emoji});
   prompt('📤 Код:',myRoomCode);closeInvite();
 }
-function joinByCode(){let code=prompt('📥 Введи код:');if(code){safeSend({type:'join_room',code:code,nickname:nick,avatar:cur.emoji});closeInvite();}}
+function joinByCode(){
+  let code=prompt('📥 Введи код:');
+  if(code&&code.trim().length>0){
+    safeSend({type:'join_room',code:code.trim(),nickname:nick,avatar:cur.emoji});
+    closeInvite();
+    alert('✅ Подключение к комнате: '+code);
+  }
+}
 function showGuest(data){
   if(!data)return;let gb=document.getElementById('guest-badge');
   gb.innerHTML=`<span style="font-size:18px">${data.avatar}</span> <span style="color:#0c8">${data.nickname}</span> в лобби!`;gb.style.display='flex';
-  if(data.nickname&&!friends.includes(data.nickname)){friendRequests.push(data.nickname);saveData();}
+  if(data.nickname&&!friends.includes(data.nickname)&&!friendRequests.includes(data.nickname)){friendRequests.push(data.nickname);saveData();}
 }
 
 // ====== РЕЖИМЫ ======
@@ -300,12 +304,14 @@ function connect(){
       case 'match_result':endMatch(d);break;
       case 'leaderboard':openLeaderboard();break;
       case 'guest_joined':showGuest(d);break;
+      case 'friend_request':if(!friendRequests.includes(d.from)&&!friends.includes(d.from)&&!blocked.includes(d.from)){friendRequests.push(d.from);saveData();alert('📨 '+d.from+' хочет добавить вас в друзья!');}break;
+      case 'friend_accepted':if(!friends.includes(d.from)){friends.push(d.from);friendRequests=friendRequests.filter(f=>f!==d.from);saveData();alert('✅ '+d.from+' принял заявку!');}break;
     }
   };
   ws.onclose=()=>{if(inMatch)leave();setTimeout(connect,3000);};
 }
 function startMatch(d){inMatch=true;alive=true;hp=100;me.x=d.yourX||150;me.y=d.yourY||270;enemy={id:d.enemy.id,nickname:d.enemy.nickname,x:me.x===150?810:150,y:270,alive:true};document.getElementById('gs').textContent='⚔️ '+enemy.nickname;document.getElementById('gh').textContent='100';document.getElementById('gm').textContent='';bullets=[];particles=[];}
-function endMatch(d){inMatch=false;enemy=null;alive=true;hp=100;if(d.trophies!==undefined){trophies=d.trophies;if(trophies>maxTrophies)maxTrophies=trophies;document.getElementById('gt').textContent=trophies;if(!allHeroTrophies[cur.emoji])allHeroTrophies[cur.emoji]=0;allHeroTrophies[cur.emoji]=Math.max(allHeroTrophies[cur.emoji],trophies);}coins+=10;checkRewards();hours+=0.05;elo=Math.max(0,elo+(d.result==='win'?15:-8));if(elo>=1250)rank='ЛЕГЕНДА';else if(elo>=750)rank='ЗОЛОТО';else if(elo>=250)rank='СЕРЕБРО';else rank='БРОНЗА 1';updateUI();saveData();document.getElementById('lobby').style.display='flex';document.getElementById('game').style.display='none';bullets=[];particles=[];}
+function endMatch(d){inMatch=false;enemy=null;alive=true;hp=100;if(d.trophies!==undefined){trophies=d.trophies;if(trophies>maxTrophies)maxTrophies=trophies;document.getElementById('gt').textContent=trophies;if(!allHeroTrophies[cur.emoji])allHeroTrophies[cur.emoji]=0;allHeroTrophies[cur.emoji]=Math.max(allHeroTrophies[cur.emoji],trophies);}coins+=10;checkRewards();hours+=0.05;elo=Math.max(0,elo+(d.result==='win'?25:-10));if(elo>=1250)rank='ЛЕГЕНДА';else if(elo>=750)rank='ЗОЛОТО';else if(elo>=250)rank='СЕРЕБРО';else rank='БРОНЗА 1';updateUI();saveData();document.getElementById('lobby').style.display='flex';document.getElementById('game').style.display='none';bullets=[];particles=[];}
 function leave(){safeSend({type:'leave_queue'});inMatch=false;enemy=null;document.getElementById('lobby').style.display='flex';document.getElementById('game').style.display='none';}
 function spawnP(x,y,c,n=10){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,life:20,color:c});}
 
